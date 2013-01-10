@@ -141,6 +141,7 @@ char *make_query_string(struct post_item *items, int n_items)
   return buffer;
 }
 
+/*
 int main(int argc, char **argv)
 {
 
@@ -169,3 +170,4 @@ int main(int argc, char **argv)
 
   return 0;
 }
+*/
