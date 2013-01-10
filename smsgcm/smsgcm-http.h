@@ -17,6 +17,11 @@ struct credentials {
   char *ca;
 };
 
+struct post_item {
+  char *key;
+  char *value;
+};
+
 static size_t write_callback(void *, size_t, size_t, void *);
 int get(struct credentials *creds, char *url, char *post, char **output);
 

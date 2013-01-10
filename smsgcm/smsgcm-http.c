@@ -118,6 +118,26 @@ char *url_decode(char *str)
   return buf;
 }
 
+char *make_query_string(struct post_item *items, int n_items)
+{
+  char *buffer = malloc(1);
+  int i;
+
+  for(i = 0; i < n_items; i++){
+    struct post_item *p = &items[i];
+    char *ek = url_encode(p->key);
+    char *ev = url_encode(p->value);
+
+    buffer = realloc(buffer, strlen(buffer) + strlen(ek) + strlen (ev) + (i?2:1));
+    sprintf(buffer, "%s%s%s=%s", buffer, (i?"&":""), ek, ev);
+
+    free(ek);
+    free(ev);
+  }
+
+  return buffer;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -125,10 +145,20 @@ int main(int argc, char **argv)
   c.client = "/home/ren/ssl/renning.pem";
   c.ca = "/home/ren/ssl/cacert.pem";
 
-  char *url = "https://smsgcm.omgren.com/receiveMessage";
+  struct post_item p[2];
+  p[0].key = "address";
+  p[0].value = "4154980736";
+  p[1].key = "message";
+  p[1].value = "ffffffffff";
 
+  char *post = make_query_string(p, 2);
+  char *url = "https://smsgcm.omgren.com/sendMessage";
   char *out = NULL;
-  int r = get(&c, url, NULL, &out);
+
+  int r = get(&c, url, post, &out);
+
+  if( post != NULL )
+    free(post);
 
   if( out != NULL ){
     printf("%s\n", out);
