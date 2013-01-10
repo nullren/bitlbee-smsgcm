@@ -1,4 +1,4 @@
-#include "http-util.h"
+#include "smsgcm-http.h"
 
 static size_t
 write_callback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -57,5 +57,3 @@ char *get(char *url, char *client_cert, char *ca_cert)
 
   return chunk.memory;
 }
-
-#endif /* _HTTP_UTIL_H_ */

@@ -1,5 +1,5 @@
-#ifndef _HTTP_UTIL_H_
-#define _HTTP_UTIL_H_
+#ifndef _SMSGCM_HTTP_H_
+#define _SMSGCM_HTTP_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,4 +16,4 @@ static size_t write_callback(void *, size_t, size_t, void *);
 char *get(char *, char *, char *);
 
 
-#endif /* _HTTP_UTIL_H_ */
+#endif
