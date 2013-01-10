@@ -88,8 +88,11 @@ char *url_encode(char *str)
       *pbuf++ = *pstr;
     else if (*pstr == ' ') 
       *pbuf++ = '+';
-    else 
-      *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
+    else {
+      *pbuf++ = '%';
+      *pbuf++ = to_hex(*pstr >> 4);
+      *pbuf++ = to_hex(*pstr & 15);
+    }
     pstr++;
   }
   *pbuf = '\0';
