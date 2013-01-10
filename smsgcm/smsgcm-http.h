@@ -15,5 +15,10 @@ struct write_struct {
 static size_t write_callback(void *, size_t, size_t, void *);
 char *get(char *, char *, char *);
 
+/* found at http://www.geekhideout.com/urlcode.shtml */
+char from_hex(char ch);
+char to_hex(char code);
+char *url_encode(char *str);
+char *url_decode(char *str);
 
 #endif
