@@ -110,3 +110,18 @@ char *url_decode(char *str)
   *pbuf = '\0';
   return buf;
 }
+
+int main(int argc, char **argv)
+{
+
+  char *client = "/home/ren/ssl/renning.pem";
+  char *ca = "/home/ren/ssl/cacert.pem";
+
+  char *url = "https://smsgcm.omgren.com/receiveMessage";
+
+  char *buffer = get(url, client, ca);
+
+  printf("%s\n", buffer);
+  free(buffer);
+  return 0;
+}
