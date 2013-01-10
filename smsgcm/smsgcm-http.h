@@ -13,7 +13,7 @@ struct write_struct {
 };
 
 static size_t write_callback(void *, size_t, size_t, void *);
-char *get(char *, char *, char *);
+int get(char *url, char *client_cert, char *ca_cert, char **output);
 
 /* found at http://www.geekhideout.com/urlcode.shtml */
 char from_hex(char ch);

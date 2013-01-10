@@ -21,7 +21,7 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 }
 
 /* reads a uri and then puts contents into buffer */
-char *get(char *url, char *client_cert, char *ca_cert)
+int get(char *url, char *client_cert, char *ca_cert, char **output)
 {
   CURL *curl_handle;
   struct write_struct chunk;
@@ -52,10 +52,12 @@ char *get(char *url, char *client_cert, char *ca_cert)
 
   if( r != 0 ){
     fprintf(stderr, "error: %s (%d)\n", curl_easy_strerror(r), r);
-    return NULL;
+    return r;
   }
 
-  return chunk.memory;
+  *output = chunk.memory;
+
+  return r;
 }
 
 /* Converts a hex character to its integer value */
@@ -119,9 +121,13 @@ int main(int argc, char **argv)
 
   char *url = "https://smsgcm.omgren.com/receiveMessage";
 
-  char *buffer = get(url, client, ca);
+  char *out = NULL;
+  int r = get(url, client, ca, &out);
 
-  printf("%s\n", buffer);
-  free(buffer);
+  if( out != NULL ){
+    printf("%s\n", out);
+    free(out);
+  }
+
   return 0;
 }
