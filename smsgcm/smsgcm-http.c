@@ -148,13 +148,12 @@ int main(int argc, char **argv)
   c.client = "/home/ren/ssl/renning.pem";
   c.ca = "/home/ren/ssl/cacert.pem";
 
-  struct post_item p[2];
-  p[0].key = "address";
-  p[0].value = "4154980736";
-  p[1].key = "message";
-  p[1].value = "ffffffffff";
+  struct post_item p[] =
+      { {"address", "4154980736"}
+      , {"message", "ffffffffff"}
+      };
+  char *post = make_query_string(p, sizeof(p)/sizeof(struct post_item));
 
-  char *post = make_query_string(p, 2);
   char *url = "https://smsgcm.omgren.com/sendMessage";
   char *out = NULL;
 
