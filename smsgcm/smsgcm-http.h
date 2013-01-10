@@ -18,7 +18,7 @@ struct credentials {
 };
 
 static size_t write_callback(void *, size_t, size_t, void *);
-int get(struct credentials *creds, char *url, char **output);
+int get(struct credentials *creds, char *url, char *post, char **output);
 
 /* found at http://www.geekhideout.com/urlcode.shtml */
 char from_hex(char ch);

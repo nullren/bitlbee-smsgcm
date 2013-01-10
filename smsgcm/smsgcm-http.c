@@ -21,7 +21,7 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 }
 
 /* reads a uri and then puts contents into buffer */
-int get(struct credentials *creds, char *url, char **output)
+int get(struct credentials *creds, char *url, char *post, char **output)
 {
   CURL *curl_handle;
   struct write_struct chunk;
@@ -44,6 +44,11 @@ int get(struct credentials *creds, char *url, char **output)
     curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, creds->client);
     curl_easy_setopt(curl_handle, CURLOPT_CAINFO, creds->ca);
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
+  }
+
+  /* post it if you got it */
+  if( post != NULL ){
+    curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post);
   }
 
   /* run curl */
@@ -123,7 +128,7 @@ int main(int argc, char **argv)
   char *url = "https://smsgcm.omgren.com/receiveMessage";
 
   char *out = NULL;
-  int r = get(&c, url, &out);
+  int r = get(&c, url, NULL, &out);
 
   if( out != NULL ){
     printf("%s\n", out);
