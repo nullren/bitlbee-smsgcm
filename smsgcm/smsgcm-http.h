@@ -12,8 +12,13 @@ struct write_struct {
   size_t size;
 };
 
+struct credentials {
+  char *client;
+  char *ca;
+};
+
 static size_t write_callback(void *, size_t, size_t, void *);
-int get(char *url, char *client_cert, char *ca_cert, char **output);
+int get(struct credentials *creds, char *url, char **output);
 
 /* found at http://www.geekhideout.com/urlcode.shtml */
 char from_hex(char ch);

@@ -21,7 +21,7 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 }
 
 /* reads a uri and then puts contents into buffer */
-int get(char *url, char *client_cert, char *ca_cert, char **output)
+int get(struct credentials *creds, char *url, char **output)
 {
   CURL *curl_handle;
   struct write_struct chunk;
@@ -39,10 +39,10 @@ int get(char *url, char *client_cert, char *ca_cert, char **output)
   curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
   /* ssl stuff */
-  if( client_cert != NULL ){
+  if( creds != NULL ){
     curl_easy_setopt(curl_handle, CURLOPT_SSLCERTTYPE, "PEM");
-    curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, client_cert);
-    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, ca_cert);
+    curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, creds->client);
+    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, creds->ca);
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
   }
 
@@ -116,13 +116,14 @@ char *url_decode(char *str)
 int main(int argc, char **argv)
 {
 
-  char *client = "/home/ren/ssl/renning.pem";
-  char *ca = "/home/ren/ssl/cacert.pem";
+  struct credentials c;
+  c.client = "/home/ren/ssl/renning.pem";
+  c.ca = "/home/ren/ssl/cacert.pem";
 
   char *url = "https://smsgcm.omgren.com/receiveMessage";
 
   char *out = NULL;
-  int r = get(url, client, ca, &out);
+  int r = get(&c, url, &out);
 
   if( out != NULL ){
     printf("%s\n", out);
