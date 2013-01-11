@@ -24,7 +24,7 @@ char *smsgcm_download_recent_messages(struct im_connection *ic)
 
   int r = get(sd->creds, url, NULL, &output);
 
-  if( !r ){
+  if( r != 0 ){
     return NULL;
   }
 
