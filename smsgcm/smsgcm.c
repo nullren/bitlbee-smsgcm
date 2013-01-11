@@ -1,5 +1,7 @@
 #include "smsgcm.h"
 
+GSList *smsgcm_connections = NULL;
+
 static void smsgcm_init(account_t *acc)
 {
   //set some settings i guess
@@ -13,10 +15,10 @@ static void smsgcm_init(account_t *acc)
   s = set_add(&acc->set, "base_url", def_url, NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
-  s = set_add(&acc->set, "client_cert", "", NULL, acc);
+  s = set_add(&acc->set, "client_cert", "CHANGE ME", NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
-  s = set_add(&acc->set, "ca_cert", "", NULL, acc);
+  s = set_add(&acc->set, "ca_cert", "CHANGE ME", NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
 }
@@ -29,27 +31,31 @@ static void smsgcm_login(account_t *acc)
   char *client_path = set_getstr(&ic->acc->set, "client_cert");
   char *ca_path = set_getstr(&ic->acc->set, "ca_cert");
 
+  imcb_log(ic, "looking for the files %s and %s", client_path, ca_path);
+
   // try to open certs
   FILE *cl_file = fopen(client_path, "r");
-  FILE *ca_file = fopen(ca_path, "r");
-
   if( cl_file == NULL ){
     imcb_error(ic, "Cannot open client credentials: %s", client_path);
     imc_logout(ic, FALSE);
   }
+  fclose(cl_file);
 
-  if( cl_file == NULL ){
+  FILE *ca_file = fopen(ca_path, "r");
+  if( ca_file == NULL ){
     imcb_error(ic, "Cannot open CA certificate: %s", ca_path);
     imc_logout(ic, FALSE);
   }
-
-  fclose(cl_file);
   fclose(ca_file);
+
+  imcb_connected(ic);
+  smsgcm_connections = g_slist_append(smsgcm_connections, ic);
 }
 
 static void smsgcm_logout(struct im_connection *ic)
 {
   // really nothing to do
+  smsgcm_connections = g_slist_remove(smsgcm_connections, ic);
 }
 
 void init_plugin()
