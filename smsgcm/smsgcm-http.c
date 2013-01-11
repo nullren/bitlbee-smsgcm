@@ -1,5 +1,10 @@
 #include "smsgcm-http.h"
 
+struct write_struct {
+  char *memory;
+  size_t size;
+};
+
 static size_t
 write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -68,13 +73,13 @@ int get(struct credentials *creds, char *url, char *post, char **output)
 }
 
 /* Converts a hex character to its integer value */
-char from_hex(char ch)
+static char from_hex(char ch)
 {
   return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
 }
 
 /* Converts an integer value to its hex character*/
-char to_hex(char code)
+static char to_hex(char code)
 {
   static char hex[] = "0123456789abcdef";
   return hex[code & 15];
