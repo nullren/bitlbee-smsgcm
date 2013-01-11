@@ -9,6 +9,8 @@
 #include "smsgcm.h"
 #include "smsgcm-http.h"
 
+#include <jansson.h>
+
 void smsgcm_load_messages(struct im_connection *ic);
 char *smsgcm_download_recent_messages(struct im_connection *ic);
 
