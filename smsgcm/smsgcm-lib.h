@@ -9,5 +9,6 @@
 #include "smsgcm.h"
 
 void smsgcm_load_messages(struct im_connection *ic);
+char *smsgcm_download_recent_messages(struct im_connection *ic);
 
 #endif

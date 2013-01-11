@@ -6,16 +6,18 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
   size_t realsize = size * nmemb;
   struct write_struct *mem = (struct write_struct *)userp;
 
-  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-  if (mem->memory == NULL) {
-    /* out of memory! */
-    printf("not enough memory (realloc returned NULL)\n");
-    exit(EXIT_FAILURE);
-  }
+  if( mem != NULL ){
+    mem->memory = realloc(mem->memory, mem->size + realsize + 1);
+    if (mem->memory == NULL) {
+      /* out of memory! */
+      printf("not enough memory (realloc returned NULL)\n");
+      exit(EXIT_FAILURE);
+    }
 
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
-  mem->size += realsize;
-  mem->memory[mem->size] = 0;
+    memcpy(&(mem->memory[mem->size]), contents, realsize);
+    mem->size += realsize;
+    mem->memory[mem->size] = 0;
+  }
 
   return realsize;
 }
