@@ -3,5 +3,8 @@
 
 #include <bitlbee.h>
 
+#include "smsgcm-lib.h"
+#include "smsgcm-http.h"
+
 
 #endif

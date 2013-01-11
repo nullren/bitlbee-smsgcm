@@ -34,12 +34,12 @@ static void smsgcm_login(account_t *acc)
   FILE *ca_file = fopen(ca_path, "r");
 
   if( cl_file == NULL ){
-    imcb_error(it, "Cannot open client credentials: %s", client_path);
+    imcb_error(ic, "Cannot open client credentials: %s", client_path);
     imc_logout(ic, FALSE);
   }
 
   if( cl_file == NULL ){
-    imcb_error(it, "Cannot open CA certificate: %s", ca_path);
+    imcb_error(ic, "Cannot open CA certificate: %s", ca_path);
     imc_logout(ic, FALSE);
   }
 
