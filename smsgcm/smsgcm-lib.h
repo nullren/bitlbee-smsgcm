@@ -6,4 +6,8 @@
 #define SMSGCM_SEND_MSG_URL "/sendMessage"
 #define SMSGCM_RECV_MSG_URL "/receiveMessage"
 
+#include "smsgcm.h"
+
+void smsgcm_load_messages(struct im_connection *ic);
+
 #endif

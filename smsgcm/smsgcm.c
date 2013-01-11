@@ -12,7 +12,7 @@ gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
     return 0;
 
   // Do stuff..
-  imcb_log(ic, "Another time round the loop");
+  smsgcm_load_messages(ic);
 
   // If we are still logged in run this function again after timeout.
   return (ic->flags & OPT_LOGGED_IN) == OPT_LOGGED_IN;
