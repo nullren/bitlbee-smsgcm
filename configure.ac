@@ -32,6 +32,8 @@ m4_define_default(
 
 PKG_CHECK_MODULES([GLIB],    [glib-2.0])
 PKG_CHECK_MODULES([BITLBEE], [bitlbee])
+PKG_CHECK_MODULES([LIBCURL], [libcurl])
+PKG_CHECK_MODULES([JANSSON], [jansson])
 
 # No "reliable" version set in bitlbee.pc, check manually
 CPPFLAGS="$GLIB_CFLAGS $BITLBEE_CFLAGS"
