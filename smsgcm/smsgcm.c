@@ -74,7 +74,7 @@ static void smsgcm_main_loop_start(struct im_connection *ic)
 {
   struct smsgcm_data *sd = ic->proto_data;
 
-  struct scd *ssl = ssl_connect_with_creds("smsgcm.omgren.com", 443, FALSE
+  struct scd *ssl = ssl_connect_with_creds("smsgcm.omgren.com", 443, TRUE
                         , smsgcm_ssl_connected, (ssl_credentials_func)load_credentials_from_pkcs12, ic);
   //struct scd *ssl = ssl_connect("smsgcm.omgren.com", 443, FALSE, smsgcm_ssl_connected, ic);
 
