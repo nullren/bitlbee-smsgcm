@@ -104,6 +104,7 @@ void init_plugin()
   ret->login = smsgcm_login;
   ret->logout = smsgcm_logout;
   ret->buddy_msg = smsgcm_buddy_msg;
+  ret->handle_cmp = g_strcasecmp;
 
   register_protocol(ret);
 }
