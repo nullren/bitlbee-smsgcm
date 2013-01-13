@@ -8,13 +8,6 @@
 
 #include <curl/curl.h>
 
-struct credentials {
-  char *p12_file;
-  char *p12_passwd;
-  char *client;
-  char *ca;
-};
-
 struct post_item {
   char *key;
   char *value;
