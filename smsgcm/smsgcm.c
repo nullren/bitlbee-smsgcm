@@ -73,15 +73,33 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
   return s;
 }
 gnutls_certificate_credentials_t xcred;
+struct scd
+{
+  ssl_input_function func;
+  gpointer data;
+  int fd;
+  gboolean established;
+  int inpa;
+  char *hostname;
+  gboolean verify;
+
+  gnutls_session_t session;
+};
 static void smsgcm_main_loop_start(struct im_connection *ic)
 {
   struct smsgcm_data *sd = ic->proto_data;
 
-  sd->ssl = ssl_connect("smsgcm.omgren.com", 443, FALSE, smsgcm_ssl_connected, ic);
+  struct scd *ssl = ssl_connect("smsgcm.omgren.com", 443, FALSE, smsgcm_ssl_connected, ic);
+  if( ssl == NULL ){
+    imcb_error(ic, "ssl empty??");
+    imcb_logout(ic, FALSE);
+  }
+  sd->ssl = ssl;
   sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
 
   gnutls_certificate_allocate_credentials( &xcred );
   load_credentials_from_pkcs12(ic, xcred);
+  gnutls_credentials_set( ssl->session, GNUTLS_CRD_CERTIFICATE, &xcred );
 
   sd->main_loop_id = b_timeout_add(set_getint(&ic->acc->set, "fetch_interval") * 1000, smsgcm_main_loop, ic);
 }
@@ -118,6 +136,8 @@ static void smsgcm_login(account_t *acc)
   struct smsgcm_data *sd = g_new0(struct smsgcm_data, 1);
   ic->proto_data = sd;
   sd->ic = ic;
+
+  ic->flags |= OPT_SLOW_LOGIN;
 
   // check that we can read or find the certs
   char *p12_file = set_getstr(&ic->acc->set, "p12_file");

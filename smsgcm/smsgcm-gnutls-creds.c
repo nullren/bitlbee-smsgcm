@@ -11,11 +11,11 @@ static gnutls_datum_t *load_file(char *fn){
   size_t len = 0;
 
   if( fp != NULL && fseek(fp, 0L, SEEK_END) == 0){
-    long bufsize = ftell(fp);
+    bufsize = ftell(fp);
     if( bufsize < 0 )
       return NULL;
 
-    contents = malloc(sizeof(char) * (bufsize + 1));
+    contents = g_new0(unsigned char, (bufsize + 1));
 
     rewind(fp);
     len = fread(contents, sizeof(char), bufsize, fp);
@@ -27,7 +27,7 @@ static gnutls_datum_t *load_file(char *fn){
   }
   fclose(fp);
 
-  gnutls_datum_t *dp12 = (gnutls_datum_t *)malloc(sizeof(gnutls_datum_t));
+  gnutls_datum_t *dp12 = g_new0(gnutls_datum_t,1);
   dp12->data = contents;
   dp12->size = (int)len;
 
@@ -36,16 +36,17 @@ static gnutls_datum_t *load_file(char *fn){
 
 void load_credentials_from_pkcs12(gpointer data, gnutls_certificate_credentials_t xcred){
   struct im_connection *ic = data;
-  struct credentials *creds = ic->proto_data->creds;
+  struct smsgcm_data *sd = ic->proto_data;
+  struct credentials *creds = sd->creds;
   gnutls_pkcs12_t p12;
   if( gnutls_pkcs12_init(&p12) != 0 )
     exit(1);
 
-  gnutls_datum_t *data = load_file(creds->p12_file);
-  if( data == NULL )
+  gnutls_datum_t *p12_data = load_file(creds->p12_file);
+  if( p12_data == NULL )
     exit(2);
 
-  if( gnutls_pkcs12_import(p12, data, GNUTLS_X509_FMT_DER, 0) != 0 )
+  if( gnutls_pkcs12_import(p12, p12_data, GNUTLS_X509_FMT_DER, 0) != 0 )
     exit(3);
 
   gnutls_x509_privkey_t pri;
