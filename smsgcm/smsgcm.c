@@ -21,6 +21,10 @@ static void smsgcm_main_loop_start(struct im_connection *ic)
 {
   struct smsgcm_data *sd = ic->proto_data;
 
+  //add budy and get a message from him
+  imcb_add_buddy(ic, "bob", NULL);
+  imcb_buddy_msg(ic, "bob", "lol", 0, 0);
+
   sd->main_loop_id = b_timeout_add(set_getint(&ic->acc->set, "fetch_interval") * 1000, smsgcm_main_loop, ic);
 }
 
