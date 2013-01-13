@@ -1,3 +1,6 @@
+#ifndef _SMSGCM_GNUTLS_CREDS_H_
+#define _SMSGCM_GNUTLS_CREDS_H_
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -10,7 +13,10 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 #include <bitlbee.h>
+#include <ssl_client.h>
 
 #include "smsgcm.h"
 
-void load_credentials_from_pkcs12(gpointer data, gnutls_certificate_credentials_t xcred);
+void load_credentials_from_pkcs12(gpointer data);
+
+#endif

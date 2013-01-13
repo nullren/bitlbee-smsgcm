@@ -9,6 +9,7 @@
 
 //include "smsgcm-lib.h"
 //include "smsgcm-http.h"
+#include "smsgcm-gnutls-creds.h"
 
 #define SMSGCM_API_URL "https://smsgcm.omgren.com"
 

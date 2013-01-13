@@ -34,10 +34,17 @@ static gnutls_datum_t *load_file(char *fn){
   return dp12;
 }
 
-void load_credentials_from_pkcs12(gpointer data, gnutls_certificate_credentials_t xcred){
-  struct im_connection *ic = data;
+void load_credentials_from_pkcs12(gpointer data){
+  struct scd *conn = data;
+  if( conn == NULL )
+    exit(6);
+
+  gnutls_certificate_credentials_t xcred = conn->xcred;
+
+  struct im_connection *ic = conn->data;
   struct smsgcm_data *sd = ic->proto_data;
   struct credentials *creds = sd->creds;
+
   gnutls_pkcs12_t p12;
   if( gnutls_pkcs12_init(&p12) != 0 )
     exit(1);
@@ -56,15 +63,22 @@ void load_credentials_from_pkcs12(gpointer data, gnutls_certificate_credentials_
   unsigned int extra_certs_len;
   gnutls_x509_crt_t crl;
 
-  if( gnutls_pkcs12_simple_parse(p12, creds->p12_passwd, &pri
-          , &chain, &chain_len, &extra_certs, &extra_certs_len, &crl
-          , 0) != 0 )
+  if( gnutls_pkcs12_simple_parse
+          (p12
+          , creds->p12_passwd
+          , &pri
+          , &chain
+          , &chain_len
+          , &extra_certs
+          , &extra_certs_len
+          , &crl
+          , (unsigned int)0) != 0 )
     exit(4);
 
   gnutls_certificate_set_x509_trust (xcred, &extra_certs[0], GNUTLS_X509_FMT_PEM);
   gnutls_certificate_set_verify_function (xcred, _verify_certificate_callback);
 
-   gnutls_certificate_set_x509_key (xcred, 
+  gnutls_certificate_set_x509_key (xcred, 
       chain, chain_len, pri);
 }
 
