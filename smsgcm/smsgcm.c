@@ -64,7 +64,7 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
 
   sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
 
-  char *getstr = "GET /receiveMessage HTTP/1.1\n\r\n\r";
+  char *getstr = "GET /receiveMessage HTTP/1.0\r\n\r\n";
   int s = ssl_write(sd->ssl, getstr, strlen(getstr));
 
   return s;
