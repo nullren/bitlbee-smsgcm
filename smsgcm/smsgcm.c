@@ -50,16 +50,10 @@ static void smsgcm_init(account_t *acc)
   s = set_add(&acc->set, "base_url", def_url, NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
-  s = set_add(&acc->set, "client_cert", "CHANGE ME", NULL, acc);
+  s = set_add(&acc->set, "p12_file", "CHANGE ME", NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
-  s = set_add(&acc->set, "ca_cert", "CHANGE ME", NULL, acc);
-  s->flags |= ACC_SET_OFFLINE_ONLY;
-
-  s = set_add(&acc->set, "p12_cred", "CHANGE ME", NULL, acc);
-  s->flags |= ACC_SET_OFFLINE_ONLY;
-
-  s = set_add(&acc->set, "p12_pass", "CHANGE ME", NULL, acc);
+  s = set_add(&acc->set, "p12_passwd", "CHANGE ME", NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
 }
@@ -72,25 +66,18 @@ static void smsgcm_login(account_t *acc)
   sd->ic = ic;
 
   // check that we can read or find the certs
-  char *client_path = set_getstr(&ic->acc->set, "client_cert");
-  char *ca_path = set_getstr(&ic->acc->set, "ca_cert");
+  char *p12_file = set_getstr(&ic->acc->set, "p12_file");
+  char *p12_passwd = set_getstr(&ic->acc->set, "p12_passwd");
 
-  // try to open certs
-  if( g_file_test(client_path, G_FILE_TEST_EXISTS) != TRUE ){
-    imcb_error(ic, "Cannot open client credentials: %s", client_path);
-    imc_logout(ic, FALSE);
-    return;
-  }
-
-  if( g_file_test(ca_path, G_FILE_TEST_EXISTS) != TRUE ){
-    imcb_error(ic, "Cannot open CA certificate: %s", ca_path);
+  if( g_file_test(p12_file, G_FILE_TEST_EXISTS) != TRUE ){
+    imcb_error(ic, "Cannot find client credentials: %s", p12_file);
     imc_logout(ic, FALSE);
     return;
   }
 
   sd->creds = g_new0(struct credentials, 1);
-  sd->creds->client = client_path;
-  sd->creds->ca = ca_path;
+  sd->creds->p12_file = p12_file;
+  sd->creds->p12_passwd = p12_passwd;
 
   imcb_connected(ic);
   smsgcm_connections = g_slist_append(smsgcm_connections, ic);
