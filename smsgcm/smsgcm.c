@@ -1,4 +1,5 @@
 #include "smsgcm.h"
+#include <ssl_client.h>
 
 GSList *smsgcm_connections = NULL;
 
@@ -17,13 +18,63 @@ gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
   return (ic->flags & OPT_LOGGED_IN) == OPT_LOGGED_IN;
 }
 
+gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
+{
+  struct im_connection *ic = data;
+  struct smsgcm_data *sd = ic->proto_data;
+
+  imcb_log(ic, "ssl data to be read");
+
+  char buf[1024];
+
+  if(sd == NULL || sd->fd == -1)
+    return FALSE;
+
+  int st = ssl_read(sd->ssl, buf, sizeof(buf));
+  imcb_log(ic, "ssl read %d bytes", st);
+
+  if(st > 0){
+    imcb_add_buddy(ic, "www", NULL);
+    imcb_buddy_msg(ic, "www", buf, 0, 0);
+  }
+
+  return TRUE;
+}
+
+gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_input_condition cond)
+{
+  struct im_connection *ic = data;
+  struct smsgcm_data *sd = ic->proto_data;
+
+  imcb_log(ic, "ssl connection made");
+
+  if(source == NULL){
+    sd->ssl = NULL;
+    imcb_error(ic, "ssl failed");
+    imc_logout(ic, FALSE);
+    return FALSE;
+  }
+
+  imcb_log(ic, "source is not null");
+
+  if(sd == NULL){
+    imcb_error(ic, "no smsgcm data");
+    return FALSE;
+  }
+
+  imcb_log(ic, "smsgcm data is not null");
+
+  sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
+
+  return TRUE;
+}
+
 static void smsgcm_main_loop_start(struct im_connection *ic)
 {
   struct smsgcm_data *sd = ic->proto_data;
 
-  //add budy and get a message from him
-  imcb_add_buddy(ic, "bob", NULL);
-  imcb_buddy_msg(ic, "bob", "lol", 0, 0);
+  sd->ssl = ssl_connect("www.openssl.org", 443, FALSE, smsgcm_ssl_connected, ic);
+  sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
 
   sd->main_loop_id = b_timeout_add(set_getint(&ic->acc->set, "fetch_interval") * 1000, smsgcm_main_loop, ic);
 }
