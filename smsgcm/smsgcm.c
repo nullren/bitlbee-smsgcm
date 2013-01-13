@@ -80,7 +80,9 @@ static void smsgcm_login(account_t *acc)
 
 static void smsgcm_logout(struct im_connection *ic)
 {
-  // really nothing to do
+  struct smsgcm_data *sd = ic->proto_data;
+  g_free(sd->creds);
+  g_free(sd);
   smsgcm_connections = g_slist_remove(smsgcm_connections, ic);
 }
 
