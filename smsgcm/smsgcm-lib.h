@@ -2,7 +2,7 @@
 #define _SMSGCM_LIB_H_
 
 #include "smsgcm.h"
-#include "smsgcm-http.h"
+#include "smsgcm-httputils.h"
 #include "smsgcm-curl.h"
 #include <jansson.h>
 
