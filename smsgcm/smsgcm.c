@@ -42,7 +42,6 @@ static void smsgcm_init(account_t *acc)
   char *def_url = SMSGCM_API_URL;
 
   s = set_add(&acc->set, "fetch_interval", "60", set_eval_int, acc);
-  s->flags |= ACC_SET_OFFLINE_ONLY;
 
   s = set_add(&acc->set, "base_url", def_url, NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;

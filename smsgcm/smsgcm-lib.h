@@ -3,7 +3,7 @@
 
 #include "smsgcm.h"
 #include "smsgcm-http.h"
-
+#include "smsgcm-curl.h"
 #include <jansson.h>
 
 struct message_data {

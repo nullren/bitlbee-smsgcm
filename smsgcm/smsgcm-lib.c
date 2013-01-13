@@ -12,7 +12,7 @@ char *smsgcm_download_recent_messages(struct im_connection *ic)
 
   char *output;
 
-  int r = get(sd->creds, url, NULL, &output);
+  int r = curl_get(sd->creds, url, NULL, &output);
 
   if( r != 0 ){
     return NULL;
@@ -35,7 +35,7 @@ int smsgcm_send_message(struct im_connection *ic, char *addr, char *msg)
   char *url = g_strdup_printf("%s%s",
       set_getstr(&acc->set, "base_url"), SMSGCM_SEND_MSG_URL);
 
-  int r = get(sd->creds, url, post, NULL);
+  int r = curl_get(sd->creds, url, post, NULL);
 
   return r;
 }
