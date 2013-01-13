@@ -2,8 +2,6 @@
 
 GSList *smsgcm_connections = NULL;
 
-int already_added_bob = 0;
-
 /* main loop */
 gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
 {
@@ -14,11 +12,6 @@ gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
     return 0;
 
   // Do stuff..
-  //smsgcm_load_messages(ic);
-  if( !already_added_bob ){
-    imcb_add_buddy(ic, "bob", NULL);
-    already_added_bob = 1;
-  }
 
   // If we are still logged in run this function again after timeout.
   return (ic->flags & OPT_LOGGED_IN) == OPT_LOGGED_IN;
