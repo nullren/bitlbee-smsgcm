@@ -56,6 +56,12 @@ static void smsgcm_init(account_t *acc)
   s = set_add(&acc->set, "ca_cert", "CHANGE ME", NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
+  s = set_add(&acc->set, "p12_cred", "CHANGE ME", NULL, acc);
+  s->flags |= ACC_SET_OFFLINE_ONLY;
+
+  s = set_add(&acc->set, "p12_pass", "CHANGE ME", NULL, acc);
+  s->flags |= ACC_SET_OFFLINE_ONLY;
+
 }
 
 static void smsgcm_login(account_t *acc)
