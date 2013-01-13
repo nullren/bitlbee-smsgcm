@@ -27,6 +27,10 @@ static gnutls_datum_t *load_file(char *fn){
   }
   fclose(fp);
 
+  if( getenv("BITLBEE_DEBUG") ){
+    printf("load_file: read contents of %s (%d)\n", fn, len);
+  }
+
   gnutls_datum_t *dp12 = g_new0(gnutls_datum_t,1);
   dp12->data = contents;
   dp12->size = (int)len;
@@ -63,17 +67,14 @@ void load_credentials_from_pkcs12(gpointer data){
   unsigned int extra_certs_len;
   gnutls_x509_crt_t crl;
 
-  if( gnutls_pkcs12_simple_parse
-          (p12
-          , creds->p12_passwd
-          , &pri
-          , &chain
-          , &chain_len
-          , &extra_certs
-          , &extra_certs_len
-          , &crl
-          , (unsigned int)0) != 0 )
+  if( gnutls_pkcs12_simple_parse(p12 , creds->p12_passwd
+          , &pri , &chain , &chain_len , &extra_certs
+          , &extra_certs_len , &crl , (unsigned int)0) != 0 )
     exit(4);
+
+  if( getenv("BITLBEE_DEBUG") ){
+    printf("load_credentials_from_pkcs12: contents of %s\n", creds->p12_file);
+  }
 
   gnutls_certificate_set_x509_trust (xcred, &extra_certs[0], GNUTLS_X509_FMT_PEM);
   gnutls_certificate_set_verify_function (xcred, _verify_certificate_callback);

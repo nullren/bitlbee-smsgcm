@@ -49,7 +49,7 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
   struct scd *ssl = source;
 
   if(ssl == NULL){
-    imcb_error(ic, "no ssl data");
+    imcb_error(ic, "%s (%d): %s", gnutls_strerror_name(returncode), returncode, gnutls_strerror(returncode));
     return FALSE;
   }
 
