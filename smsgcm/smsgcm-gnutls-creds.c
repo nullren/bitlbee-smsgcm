@@ -1,16 +1,4 @@
-/* This example code is placed in the public domain. */
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <gnutls/gnutls.h>
-#include <gnutls/x509.h>
-#include <gnutls/pkcs12.h>
+#include "smsgcm-gnutls-creds.h"
 
 #define MAX_BUF 1024
 
