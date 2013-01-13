@@ -76,21 +76,17 @@ static void smsgcm_login(account_t *acc)
   char *ca_path = set_getstr(&ic->acc->set, "ca_cert");
 
   // try to open certs
-  FILE *cl_file = fopen(client_path, "r");
-  if( cl_file == NULL ){
+  if( g_file_test(client_path, G_FILE_TEST_EXISTS) != TRUE ){
     imcb_error(ic, "Cannot open client credentials: %s", client_path);
     imc_logout(ic, FALSE);
     return;
-  } else
-    fclose(cl_file);
+  }
 
-  FILE *ca_file = fopen(ca_path, "r");
-  if( ca_file == NULL ){
+  if( g_file_test(ca_path, G_FILE_TEST_EXISTS) != TRUE ){
     imcb_error(ic, "Cannot open CA certificate: %s", ca_path);
     imc_logout(ic, FALSE);
     return;
-  } else
-    fclose(ca_file);
+  }
 
   sd->creds = g_new0(struct credentials, 1);
   sd->creds->client = client_path;
