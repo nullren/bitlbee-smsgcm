@@ -38,7 +38,7 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
     imcb_buddy_msg(ic, "www", buf, 0, 0);
   }
 
-  return TRUE;
+  return st;
 }
 
 gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_input_condition cond)
@@ -65,6 +65,9 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
   imcb_log(ic, "smsgcm data is not null");
 
   sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
+
+  char *getstr = "GET /\r\n\r\n";
+  int s = ssl_write(sd->ssl, getstr, strlen(getstr));
 
   return TRUE;
 }
