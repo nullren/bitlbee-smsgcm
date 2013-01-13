@@ -1,5 +1,6 @@
 #include "smsgcm.h"
 #include <ssl_client.h>
+#include "smsgcm-gnutls-creds.h"
 
 GSList *smsgcm_connections = NULL;
 
@@ -66,18 +67,21 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
 
   sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
 
-  char *getstr = "GET /\r\n\r\n";
+  char *getstr = "GET /receiveMessage\r\n\r\n";
   int s = ssl_write(sd->ssl, getstr, strlen(getstr));
 
-  return TRUE;
+  return s;
 }
-
+gnutls_certificate_credentials_t xcred;
 static void smsgcm_main_loop_start(struct im_connection *ic)
 {
   struct smsgcm_data *sd = ic->proto_data;
 
-  sd->ssl = ssl_connect("www.openssl.org", 443, FALSE, smsgcm_ssl_connected, ic);
+  sd->ssl = ssl_connect("smsgcm.omgren.com", 443, FALSE, smsgcm_ssl_connected, ic);
   sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
+
+  gnutls_certificate_allocate_credentials( &xcred );
+  load_credentials_from_pkcs12(ic, xcred);
 
   sd->main_loop_id = b_timeout_add(set_getint(&ic->acc->set, "fetch_interval") * 1000, smsgcm_main_loop, ic);
 }
