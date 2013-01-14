@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//include "smsgcm-lib.h"
+#include "smsgcm-lib.h"
 //include "smsgcm-http.h"
 #include "smsgcm-gnutls-creds.h"
 

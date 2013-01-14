@@ -2,6 +2,8 @@
 
 GSList *smsgcm_connections = NULL;
 
+static void smsgcm_poll_messages(struct im_connection *ic);
+
 /* main loop */
 gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
 {
@@ -12,6 +14,7 @@ gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
     return 0;
 
   // Do stuff..
+  smsgcm_poll_messages(ic);
 
   // If we are still logged in run this function again after timeout.
   return (ic->flags & OPT_LOGGED_IN) == OPT_LOGGED_IN;
@@ -24,7 +27,7 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
 
   imcb_log(ic, "ssl data to be read");
 
-  char buf[1024];
+  char buf[10240];
 
   if(sd == NULL || sd->fd == -1)
     return FALSE;
@@ -32,12 +35,32 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
   int st = ssl_read(sd->ssl, buf, sizeof(buf));
   imcb_log(ic, "ssl read %d bytes", st);
 
+  buf[st] = '\0';
+
+  int skip = 4;
+  char *end_headers = strstr(buf, "\r\n\r\n");
+  if( end_headers == NULL ){
+    skip = 2;
+    end_headers = strstr(buf, "\n\n");
+  }
+
+  if( end_headers == NULL ){
+    imcb_error(ic, "malformed headers");
+    return FALSE;
+  }
+
+  char *body = end_headers + skip;
+
   if(st > 0){
-    imcb_add_buddy(ic, "www", NULL);
-    imcb_buddy_msg(ic, "www", buf, 0, 0);
+    if( getenv("BITLBEE_DEBUG") ){
+      imcb_add_buddy(ic, "www", NULL);
+      imcb_buddy_msg(ic, "www", body, 0, 0);
+    }
+    smsgcm_load_messages(ic, body);
   }else{
     imcb_log(ic, "did not read anything");
   }
+
 
   return st;
 }
@@ -64,19 +87,16 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
 
   sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
 
-  char *getstr = "GET /receiveMessage HTTP/1.0\r\n\r\n";
+  char *getstr = "GET /receiveMessage?dump HTTP/1.0\r\n\r\n";
   int s = ssl_write(sd->ssl, getstr, strlen(getstr));
 
   return s;
 }
 
-static void smsgcm_main_loop_start(struct im_connection *ic)
-{
+static void smsgcm_poll_messages(struct im_connection *ic){
   struct smsgcm_data *sd = ic->proto_data;
-
   struct scd *ssl = ssl_connect_with_creds("smsgcm.omgren.com", 443, TRUE
                         , smsgcm_ssl_connected, (ssl_credentials_func)load_credentials_from_pkcs12, ic);
-  //struct scd *ssl = ssl_connect("smsgcm.omgren.com", 443, FALSE, smsgcm_ssl_connected, ic);
 
   if( ssl == NULL ){
     imcb_error(ic, "ssl empty??");
@@ -84,6 +104,14 @@ static void smsgcm_main_loop_start(struct im_connection *ic)
   }
   sd->ssl = ssl;
   sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
+}
+
+
+static void smsgcm_main_loop_start(struct im_connection *ic)
+{
+  struct smsgcm_data *sd = ic->proto_data;
+
+  smsgcm_poll_messages(ic);
 
   sd->main_loop_id = b_timeout_add(set_getint(&ic->acc->set, "fetch_interval") * 1000, smsgcm_main_loop, ic);
 }

@@ -11,7 +11,7 @@ struct message_data {
   long time;
 };
 
-void smsgcm_load_messages(struct im_connection *ic);
-char *smsgcm_download_recent_messages(struct im_connection *ic);
+void smsgcm_load_messages(struct im_connection *ic, char *);
+//char *smsgcm_download_recent_messages(struct im_connection *ic);
 
 #endif
