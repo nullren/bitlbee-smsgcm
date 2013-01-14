@@ -1,73 +1,42 @@
 #include "smsgcm-lib.h"
 
+static char *TAG = "SMSGCM-LIB";
 
-char *smsgcm_download_recent_messages(struct im_connection *ic)
-{
-  account_t *acc = ic->acc;
-  struct smsgcm_data *sd = ic->proto_data;
-
-  // get url
-  char *url = g_strdup_printf("%s%s",
-      set_getstr(&acc->set, "base_url"), SMSGCM_RECV_MSG_URL);
-
-  char *output;
-
-  int r = get(sd->creds, url, NULL, &output);
-
-  if( r != 0 ){
-    return NULL;
-  }
-
-  return output;
-}
-
-int smsgcm_send_message(struct im_connection *ic, char *addr, char *msg)
-{
-  account_t *acc = ic->acc;
-  struct smsgcm_data *sd = ic->proto_data;
-
-  struct post_item p[] =
-      { {"address", addr}
-      , {"message", msg}
-      };
-
-  char *post = make_query_string(p, 2);
-  char *url = g_strdup_printf("%s%s",
-      set_getstr(&acc->set, "base_url"), SMSGCM_SEND_MSG_URL);
-
-  int r = get(sd->creds, url, post, NULL);
-
-  return r;
-}
-
-static void smsgcm_add_buddy(struct im_connection *ic, char *name, const char *phone)
+static void smsgcm_add_buddy(struct im_connection *ic, char *name, char *phone)
 {
   struct smsgcm_data *sd = ic->proto_data;
 
   // Check if the buddy is already in the buddy list.
-  if (!bee_user_by_handle(ic->bee, ic, name)) {
+  if(getenv("BITLBEE_DEBUG"))
     imcb_log(ic, "add buddy for %s", name);
-    return;
-    imcb_add_buddy(ic, name, NULL);
-    imcb_rename_buddy(ic, name, phone);
-    imcb_buddy_nick_hint(ic, name, name);
-    imcb_buddy_status(ic, name, OPT_LOGGED_IN, NULL, NULL);
-  }
+  imcb_add_buddy(ic, phone, NULL);
+  imcb_rename_buddy(ic, phone, name);
+  imcb_buddy_nick_hint(ic, phone, name);
+  imcb_buddy_status(ic, phone, OPT_LOGGED_IN, NULL, NULL);
 }
 
-void smsgcm_load_messages(struct im_connection *ic)
+static void smsgcm_buddy_msg(struct im_connection *ic, char *phone, char *msg)
+{
+  imcb_buddy_msg(ic, phone, msg, 0, 0);
+}
+
+void smsgcm_load_messages(struct im_connection *ic, char *recv)
 {
   // look at receiveMessage and download
-  char *recv = smsgcm_download_recent_messages(ic);
+  //char *recv = smsgcm_download_recent_messages(ic);
+
+  if( getenv("BITLBEE_DEBUG") ){
+    fprintf(stderr, "%s: smsgcm_load_messages: parsing json from `%s`\n", TAG, recv);
+  }
 
   json_t *root;
   json_error_t error;
 
   root = json_loads(recv, 0, &error);
-  g_free(recv);
+  //g_free(recv);
 
   if(!json_is_array(root)){
-    imcb_error(ic, "malformed json sent from server: was expecting array");
+    imcb_error(ic, "malformed json sent from server: was expecting array. (%d) %s", error.line, error.text);
     return;
   }
 
@@ -103,11 +72,13 @@ void smsgcm_load_messages(struct im_connection *ic)
     msg->address = json_string_value(address);
     msg->message = json_string_value(message);
 
-    imcb_log(ic, "read message: %s (%s): %s", msg->name
-                                            , msg->address
-                                            , msg->message);
+    if(getenv("BITLBEE_DEBUG"))
+      imcb_log(ic, "read message: %s (%s): %s", msg->name
+                                              , msg->address
+                                              , msg->message);
 
     smsgcm_add_buddy(ic, msg->name, msg->address);
+    smsgcm_buddy_msg(ic, msg->address, msg->message);
   }
 
   json_decref(root);

@@ -2,6 +2,8 @@
 
 GSList *smsgcm_connections = NULL;
 
+static void smsgcm_poll_messages(struct im_connection *ic);
+
 /* main loop */
 gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
 {
@@ -12,15 +14,134 @@ gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
     return 0;
 
   // Do stuff..
-  smsgcm_load_messages(ic);
+  smsgcm_poll_messages(ic);
 
   // If we are still logged in run this function again after timeout.
   return (ic->flags & OPT_LOGGED_IN) == OPT_LOGGED_IN;
 }
 
+gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
+{
+  struct im_connection *ic = data;
+  struct smsgcm_data *sd = ic->proto_data;
+
+  char buf[10240];
+
+  if(sd == NULL || sd->fd == -1)
+    return FALSE;
+
+  int st = ssl_read(sd->ssl, buf, sizeof(buf));
+
+  buf[st] = '\0';
+
+  int skip = 4;
+  char *end_headers = strstr(buf, "\r\n\r\n");
+  if( end_headers == NULL ){
+    skip = 2;
+    end_headers = strstr(buf, "\n\n");
+  }
+
+  if( end_headers == NULL ){
+    return FALSE;
+  }
+
+  char *body = end_headers + skip;
+
+  if(st > 0){
+    if( getenv("BITLBEE_DEBUG") ){
+      imcb_add_buddy(ic, "www", NULL);
+      imcb_buddy_msg(ic, "www", body, 0, 0);
+    }
+    if( sd->queued != NULL ){
+      g_free(sd->queued);
+      sd->queued = NULL;
+      if( getenv("BITLBEE_DEBUG") )
+        imcb_log(ic, "there was a message queued, so we cleared it: %s", (char *)sd->queued);
+    } else {
+      smsgcm_load_messages(ic, body);
+    }
+  }else{
+    if( getenv("BITLBEE_DEBUG") )
+      imcb_log(ic, "did not read anything");
+  }
+
+
+  return st;
+}
+
+gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_input_condition cond)
+{
+  struct im_connection *ic = data;
+  struct smsgcm_data *sd = ic->proto_data;
+  struct scd *ssl = source;
+
+  if(ssl == NULL){
+    imcb_error(ic, "%s (%d): %s", gnutls_strerror_name(returncode), returncode, gnutls_strerror(returncode));
+    return FALSE;
+  }
+
+  if(sd == NULL){
+    imcb_error(ic, "no smsgcm data");
+    return FALSE;
+  }
+
+  sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
+
+  char getstr[10240];
+  char *template = "GET /%sMessage?%s HTTP/1.0\r\n\r\n";
+
+  if(sd->queued != NULL){
+    char *addr = g_strdup(sd->queued->address);
+    char *mesg = g_strdup(sd->queued->message);
+    struct post_item p[] =
+        { {"address", addr} , {"message", mesg} };
+
+    char *qs = make_query_string(p, 2);
+    g_sprintf(getstr, template, "send", qs);
+
+    g_free(qs); qs = NULL;
+    g_free(addr); addr = NULL;
+    g_free(mesg); mesg = NULL;
+    if(getenv("BITLBEE_DEBUG"))
+      imcb_log(ic, "sending '%s' to server", getstr);
+  }else{
+    g_sprintf(getstr, template, "receive", "dump");
+  }
+
+  int s = ssl_write(sd->ssl, getstr, strlen(getstr));
+
+  return s;
+}
+
+static void smsgcm_poll_messages(struct im_connection *ic){
+  struct smsgcm_data *sd = ic->proto_data;
+  struct scd *ssl = ssl_connect_with_creds("smsgcm.omgren.com", 443, TRUE
+                        , smsgcm_ssl_connected, (ssl_credentials_func)load_credentials_from_pkcs12, ic);
+
+  if( ssl == NULL ){
+    imcb_error(ic, "ssl empty??");
+    imc_logout(ic, FALSE);
+  }
+  sd->ssl = ssl;
+  sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
+}
+
+static void smsgcm_post_message(struct im_connection *ic, char *address, char *message){
+  struct smsgcm_data *sd = ic->proto_data;
+
+  sd->queued = g_new0(struct queue_message, 1);
+
+  sd->queued->address = g_strdup(address);
+  sd->queued->message = g_strdup(message);
+
+  smsgcm_poll_messages(ic);
+}
+
 static void smsgcm_main_loop_start(struct im_connection *ic)
 {
   struct smsgcm_data *sd = ic->proto_data;
+
+  smsgcm_poll_messages(ic);
 
   sd->main_loop_id = b_timeout_add(set_getint(&ic->acc->set, "fetch_interval") * 1000, smsgcm_main_loop, ic);
 }
@@ -28,6 +149,9 @@ static void smsgcm_main_loop_start(struct im_connection *ic)
 /* message sent to buddy - use imcb_buddy_msg(ic, handle, msg, 0, 0) to display message */
 static int smsgcm_buddy_msg(struct im_connection *ic, char *who, char *message, int flags)
 {
+  if(getenv("BITLBEE_DEBUG"))
+    imcb_log(ic, "tried to send a buddy message to %s", who);
+  smsgcm_post_message(ic, who, message);
   return 0;
 }
 
@@ -39,15 +163,14 @@ static void smsgcm_init(account_t *acc)
   char *def_url = SMSGCM_API_URL;
 
   s = set_add(&acc->set, "fetch_interval", "60", set_eval_int, acc);
-  s->flags |= ACC_SET_OFFLINE_ONLY;
 
   s = set_add(&acc->set, "base_url", def_url, NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
-  s = set_add(&acc->set, "client_cert", "CHANGE ME", NULL, acc);
+  s = set_add(&acc->set, "p12_file", "CHANGE ME", NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
-  s = set_add(&acc->set, "ca_cert", "CHANGE ME", NULL, acc);
+  s = set_add(&acc->set, "p12_passwd", "CHANGE ME", NULL, acc);
   s->flags |= ACC_SET_OFFLINE_ONLY;
 
 }
@@ -59,28 +182,21 @@ static void smsgcm_login(account_t *acc)
   ic->proto_data = sd;
   sd->ic = ic;
 
+  ic->flags |= OPT_SLOW_LOGIN;
+
   // check that we can read or find the certs
-  char *client_path = set_getstr(&ic->acc->set, "client_cert");
-  char *ca_path = set_getstr(&ic->acc->set, "ca_cert");
+  char *p12_file = set_getstr(&ic->acc->set, "p12_file");
+  char *p12_passwd = set_getstr(&ic->acc->set, "p12_passwd");
 
-  // try to open certs
-  FILE *cl_file = fopen(client_path, "r");
-  if( cl_file == NULL ){
-    imcb_error(ic, "Cannot open client credentials: %s", client_path);
+  if( g_file_test(p12_file, G_FILE_TEST_EXISTS) != TRUE ){
+    imcb_error(ic, "Cannot find client credentials: %s", p12_file);
     imc_logout(ic, FALSE);
+    return;
   }
-  fclose(cl_file);
-
-  FILE *ca_file = fopen(ca_path, "r");
-  if( ca_file == NULL ){
-    imcb_error(ic, "Cannot open CA certificate: %s", ca_path);
-    imc_logout(ic, FALSE);
-  }
-  fclose(ca_file);
 
   sd->creds = g_new0(struct credentials, 1);
-  sd->creds->client = client_path;
-  sd->creds->ca = ca_path;
+  sd->creds->p12_file = p12_file;
+  sd->creds->p12_passwd = p12_passwd;
 
   imcb_connected(ic);
   smsgcm_connections = g_slist_append(smsgcm_connections, ic);
@@ -90,7 +206,9 @@ static void smsgcm_login(account_t *acc)
 
 static void smsgcm_logout(struct im_connection *ic)
 {
-  // really nothing to do
+  struct smsgcm_data *sd = ic->proto_data;
+  g_free(sd->creds);
+  g_free(sd);
   smsgcm_connections = g_slist_remove(smsgcm_connections, ic);
 }
 
