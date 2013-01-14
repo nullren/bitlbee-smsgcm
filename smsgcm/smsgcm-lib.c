@@ -7,7 +7,8 @@ static void smsgcm_add_buddy(struct im_connection *ic, char *name, char *phone)
   struct smsgcm_data *sd = ic->proto_data;
 
   // Check if the buddy is already in the buddy list.
-  imcb_log(ic, "add buddy for %s", name);
+  if(getenv("BITLBEE_DEBUG"))
+    imcb_log(ic, "add buddy for %s", name);
   imcb_add_buddy(ic, phone, NULL);
   imcb_rename_buddy(ic, phone, name);
   imcb_buddy_nick_hint(ic, phone, name);
@@ -71,9 +72,10 @@ void smsgcm_load_messages(struct im_connection *ic, char *recv)
     msg->address = json_string_value(address);
     msg->message = json_string_value(message);
 
-    imcb_log(ic, "read message: %s (%s): %s", msg->name
-                                            , msg->address
-                                            , msg->message);
+    if(getenv("BITLBEE_DEBUG"))
+      imcb_log(ic, "read message: %s (%s): %s", msg->name
+                                              , msg->address
+                                              , msg->message);
 
     smsgcm_add_buddy(ic, msg->name, msg->address);
     smsgcm_buddy_msg(ic, msg->address, msg->message);
