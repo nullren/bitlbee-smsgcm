@@ -25,15 +25,12 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
   struct im_connection *ic = data;
   struct smsgcm_data *sd = ic->proto_data;
 
-  imcb_log(ic, "ssl data to be read");
-
   char buf[10240];
 
   if(sd == NULL || sd->fd == -1)
     return FALSE;
 
   int st = ssl_read(sd->ssl, buf, sizeof(buf));
-  imcb_log(ic, "ssl read %d bytes", st);
 
   buf[st] = '\0';
 
@@ -56,7 +53,12 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
       imcb_add_buddy(ic, "www", NULL);
       imcb_buddy_msg(ic, "www", body, 0, 0);
     }
-    smsgcm_load_messages(ic, body);
+    if( sd->queued != NULL ){
+      g_free(sd->queued);
+      sd->queued = NULL;
+    } else {
+      smsgcm_load_messages(ic, body);
+    }
   }else{
     imcb_log(ic, "did not read anything");
   }
@@ -87,7 +89,18 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
 
   sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
 
-  char *getstr = "GET /receiveMessage?dump HTTP/1.0\r\n\r\n";
+  char getstr[10240];
+  char *template = "GET /%sMessage?%s HTTP/1.0\r\n\r\n";
+
+  if(sd->queued != NULL){
+    struct post_item p[] =
+        { {"address", g_strdup(sd->queued->address)}
+        , {"message", g_strdup(sd->queued->message)}
+        };
+    g_sprintf(getstr, template, "send", make_query_string(p, 2));
+  }else
+    g_sprintf(getstr, template, "receive", "dump");
+
   int s = ssl_write(sd->ssl, getstr, strlen(getstr));
 
   return s;
@@ -106,6 +119,16 @@ static void smsgcm_poll_messages(struct im_connection *ic){
   sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
 }
 
+static void smsgcm_post_message(struct im_connection *ic, char *address, char *message){
+  struct smsgcm_data *sd = ic->proto_data;
+
+  struct queue_message *msg = g_new0(struct queue_message, 1);
+
+  msg->address = g_strdup(address);
+  msg->message = g_strdup(message);
+
+  smsgcm_poll_messages(ic);
+}
 
 static void smsgcm_main_loop_start(struct im_connection *ic)
 {

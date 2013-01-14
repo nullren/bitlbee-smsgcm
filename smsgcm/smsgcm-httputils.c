@@ -1,4 +1,4 @@
-#include "smsgcm-http.h"
+#include "smsgcm-httputils.h"
 
 /* Converts a hex character to its integer value */
 static char from_hex(char ch)

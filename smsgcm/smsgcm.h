@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "smsgcm-lib.h"
-//include "smsgcm-http.h"
+#include "smsgcm-httputils.h"
 #include "smsgcm-gnutls-creds.h"
 
 #define SMSGCM_API_URL "https://smsgcm.omgren.com"
@@ -23,11 +23,17 @@ struct smsgcm_data {
   void *ssl;
   int bfd;
   int fd;
+  struct queue_message *queued;
 };
 
 struct buddy_data {
   char *name;
   char *address;
+};
+
+struct queue_message {
+  char *address;
+  char *message;
 };
 
 struct credentials {
