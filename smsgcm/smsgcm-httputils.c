@@ -59,6 +59,7 @@ char *url_decode(char *str)
 char *make_query_string(struct post_item *items, int n_items)
 {
   char *buffer = malloc(1);
+  buffer[0] = '\0';
   int i;
 
   for(i = 0; i < n_items; i++){

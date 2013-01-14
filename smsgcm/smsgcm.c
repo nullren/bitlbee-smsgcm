@@ -42,7 +42,6 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
   }
 
   if( end_headers == NULL ){
-    imcb_error(ic, "malformed headers");
     return FALSE;
   }
 
@@ -56,6 +55,7 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
     if( sd->queued != NULL ){
       g_free(sd->queued);
       sd->queued = NULL;
+      imcb_log(ic, "there was a message queued, so we cleared it: %s", (char *)sd->queued);
     } else {
       smsgcm_load_messages(ic, body);
     }
@@ -78,14 +78,10 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
     return FALSE;
   }
 
-  imcb_log(ic, "return code: %d", returncode);
-
   if(sd == NULL){
     imcb_error(ic, "no smsgcm data");
     return FALSE;
   }
-
-  imcb_log(ic, "smsgcm data is not null");
 
   sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
 
@@ -93,13 +89,21 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
   char *template = "GET /%sMessage?%s HTTP/1.0\r\n\r\n";
 
   if(sd->queued != NULL){
+    char *addr = g_strdup(sd->queued->address);
+    char *mesg = g_strdup(sd->queued->message);
     struct post_item p[] =
-        { {"address", g_strdup(sd->queued->address)}
-        , {"message", g_strdup(sd->queued->message)}
-        };
-    g_sprintf(getstr, template, "send", make_query_string(p, 2));
-  }else
+        { {"address", addr} , {"message", mesg} };
+
+    char *qs = make_query_string(p, 2);
+    g_sprintf(getstr, template, "send", qs);
+
+    g_free(qs); qs = NULL;
+    g_free(addr); addr = NULL;
+    g_free(mesg); mesg = NULL;
+    imcb_log(ic, "sending '%s' to server", getstr);
+  }else{
     g_sprintf(getstr, template, "receive", "dump");
+  }
 
   int s = ssl_write(sd->ssl, getstr, strlen(getstr));
 
@@ -122,10 +126,10 @@ static void smsgcm_poll_messages(struct im_connection *ic){
 static void smsgcm_post_message(struct im_connection *ic, char *address, char *message){
   struct smsgcm_data *sd = ic->proto_data;
 
-  struct queue_message *msg = g_new0(struct queue_message, 1);
+  sd->queued = g_new0(struct queue_message, 1);
 
-  msg->address = g_strdup(address);
-  msg->message = g_strdup(message);
+  sd->queued->address = g_strdup(address);
+  sd->queued->message = g_strdup(message);
 
   smsgcm_poll_messages(ic);
 }
@@ -142,6 +146,8 @@ static void smsgcm_main_loop_start(struct im_connection *ic)
 /* message sent to buddy - use imcb_buddy_msg(ic, handle, msg, 0, 0) to display message */
 static int smsgcm_buddy_msg(struct im_connection *ic, char *who, char *message, int flags)
 {
+  imcb_log(ic, "tried to send a buddy message to %s", who);
+  smsgcm_post_message(ic, who, message);
   return 0;
 }
 
