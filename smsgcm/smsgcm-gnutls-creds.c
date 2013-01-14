@@ -102,13 +102,7 @@ _verify_certificate_callback (gnutls_session_t session)
   const char *hostname;
   gnutls_datum_t out;
 
-  /* read hostname */
-  hostname = gnutls_session_get_ptr (session);
-
-  /* This verification function uses the trusted CAs in the credentials
-   * structure. So you must have installed one or more CA certificates.
-   */
-  ret = gnutls_certificate_verify_peers3 (session, hostname, &status);
+  ret = gnutls_certificate_verify_peers2 (session, &status);
   if (ret < 0)
   {
     if( getenv("BITLBEE_DEBUG") ){
@@ -136,7 +130,6 @@ _verify_certificate_callback (gnutls_session_t session)
     if( getenv("BITLBEE_DEBUG") ){
       fprintf(stderr, "%s: _verify_certificate_callback: status = %d\n", TAG, status);
     }
-    return 0;
     return GNUTLS_E_CERTIFICATE_ERROR;
   }
 
