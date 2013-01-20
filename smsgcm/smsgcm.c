@@ -231,6 +231,8 @@ void init_plugin()
   ret->logout = smsgcm_logout;
   ret->buddy_msg = smsgcm_buddy_msg;
   ret->handle_cmp = g_strcasecmp;
+  ret->add_buddy = smsgcm_add_buddy;
+  ret->set_name = smsgcm_set_name;
 
   register_protocol(ret);
 }
