@@ -28,9 +28,7 @@ static gnutls_datum_t *load_file(char *fn){
   }
   fclose(fp);
 
-  if( getenv("BITLBEE_DEBUG") ){
-    fprintf(stderr, "%s: load_file: read contents of %s (%d)\n", TAG, fn, (int)len);
-  }
+  smsgcm_log(TAG, "load_file", "read contents of %s (%d)", fn, (int)len);
 
   gnutls_datum_t *dp12 = g_new0(gnutls_datum_t,1);
   dp12->data = contents;
@@ -45,9 +43,7 @@ void load_credentials_from_pkcs12(gpointer data){
     exit(6);
 
   gnutls_certificate_credentials_t xcred = conn->xcred;
-  if( getenv("BITLBEE_DEBUG") ){
-    fprintf(stderr, "%s: load_credentials_from_pkcs12: address of xcreds: %p\n", TAG, xcred);
-  }
+  smsgcm_log(TAG, "load_credentials_from_pkcs12", "address of xcreds: %p", xcred);
 
   struct im_connection *ic = conn->data;
   struct smsgcm_data *sd = ic->proto_data;
@@ -76,9 +72,7 @@ void load_credentials_from_pkcs12(gpointer data){
           , &extra_certs_len , &crl , (unsigned int)0) != 0 )
     exit(4);
 
-  if( getenv("BITLBEE_DEBUG") ){
-    fprintf(stderr, "%s: load_credentials_from_pkcs12: read contents of %s\n", TAG, creds->p12_file);
-  }
+  smsgcm_log(TAG, "load_credentials_from_pkcs12", "read contents of %s", creds->p12_file);
 
   gnutls_certificate_set_x509_trust (xcred, &extra_certs[0], GNUTLS_X509_FMT_PEM);
   gnutls_certificate_set_verify_function (xcred, _verify_certificate_callback);
@@ -94,9 +88,7 @@ void load_credentials_from_pkcs12(gpointer data){
 static int
 _verify_certificate_callback (gnutls_session_t session)
 {
-  if( getenv("BITLBEE_DEBUG") ){
-    fprintf(stderr, "%s: _verify_certificate_callback: called\n", TAG);
-  }
+  smsgcm_log(TAG, "_verify_certificate_callback", "called");
   unsigned int status;
   int ret, type;
   const char *hostname;
@@ -105,9 +97,7 @@ _verify_certificate_callback (gnutls_session_t session)
   ret = gnutls_certificate_verify_peers2 (session, &status);
   if (ret < 0)
   {
-    if( getenv("BITLBEE_DEBUG") ){
-      fprintf(stderr, "%s: _verify_certificate_callback: failed veryify peers3\n", TAG);
-    }
+    smsgcm_log(TAG, "_verify_certificate_callback", "failed veryify peers2");
     return GNUTLS_E_CERTIFICATE_ERROR;
   }
 
@@ -116,22 +106,16 @@ _verify_certificate_callback (gnutls_session_t session)
   ret = gnutls_certificate_verification_status_print( status, type, &out, 0);
   if (ret < 0)
   {
-    if( getenv("BITLBEE_DEBUG") ){
-      fprintf(stderr, "%s: _verify_certificate_callback: failed verify status print\n", TAG);
-    }
+    smsgcm_log(TAG, "_verify_certificate_callback", "failed verify status print");
     return GNUTLS_E_CERTIFICATE_ERROR;
   }
 
-  printf ("%s", out.data);
+  if (status != 0){
+    smsgcm_log(TAG, "_verify_certificate_callback", "status = %d; %s", status, out.data);
+    return GNUTLS_E_CERTIFICATE_ERROR;
+  }
 
   gnutls_free(out.data);
-
-  if (status != 0) /* Certificate is not trusted */ {
-    if( getenv("BITLBEE_DEBUG") ){
-      fprintf(stderr, "%s: _verify_certificate_callback: status = %d\n", TAG, status);
-    }
-    return GNUTLS_E_CERTIFICATE_ERROR;
-  }
 
   /* notify gnutls to continue handshake normally */
   return 0;

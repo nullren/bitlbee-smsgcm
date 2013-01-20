@@ -90,3 +90,17 @@ void smsgcm_load_messages(struct im_connection *ic, char *recv)
   return;
 
 }
+
+void smsgcm_log(char *tag, char *function, char *fmt, ...)
+{
+  if( getenv("BITLBEE_DEBUG") ){
+    va_list args;
+    va_start(args, fmt);
+
+    fprintf(stderr, "%s:%s: ", tag, function);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+
+    va_end(args);
+  }
+}
