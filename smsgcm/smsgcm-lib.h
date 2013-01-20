@@ -12,6 +12,7 @@ struct message_data {
 };
 
 void smsgcm_load_messages(struct im_connection *ic, char *);
-//char *smsgcm_download_recent_messages(struct im_connection *ic);
+void smsgcm_lib_buddy_msg(struct im_connection *ic, char *phone, char *msg);
+void smsgcm_lib_add_buddy(struct im_connection *ic, char *name, char *phone);
 
 #endif

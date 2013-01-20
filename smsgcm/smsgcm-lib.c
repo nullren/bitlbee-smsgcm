@@ -2,20 +2,25 @@
 
 static char *TAG = "SMSGCM-LIB";
 
-static void smsgcm_add_buddy(struct im_connection *ic, char *name, char *phone)
+void smsgcm_lib_add_buddy(struct im_connection *ic, char *name, char *phone)
 {
   struct smsgcm_data *sd = ic->proto_data;
 
   // Check if the buddy is already in the buddy list.
   if(getenv("BITLBEE_DEBUG"))
     imcb_log(ic, "add buddy for %s", name);
+
   imcb_add_buddy(ic, phone, NULL);
-  imcb_rename_buddy(ic, phone, name);
-  imcb_buddy_nick_hint(ic, phone, name);
+
+  if(name != NULL){
+    imcb_rename_buddy(ic, phone, name);
+    imcb_buddy_nick_hint(ic, phone, name);
+  }
+
   imcb_buddy_status(ic, phone, OPT_LOGGED_IN, NULL, NULL);
 }
 
-static void smsgcm_buddy_msg(struct im_connection *ic, char *phone, char *msg)
+void smsgcm_lib_buddy_msg(struct im_connection *ic, char *phone, char *msg)
 {
   imcb_buddy_msg(ic, phone, msg, 0, 0);
 }
@@ -77,8 +82,8 @@ void smsgcm_load_messages(struct im_connection *ic, char *recv)
                                               , msg->address
                                               , msg->message);
 
-    smsgcm_add_buddy(ic, msg->name, msg->address);
-    smsgcm_buddy_msg(ic, msg->address, msg->message);
+    smsgcm_lib_add_buddy(ic, msg->name, msg->address);
+    smsgcm_lib_buddy_msg(ic, msg->address, msg->message);
   }
 
   json_decref(root);

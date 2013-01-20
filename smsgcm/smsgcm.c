@@ -20,6 +20,14 @@ gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
   return (ic->flags & OPT_LOGGED_IN) == OPT_LOGGED_IN;
 }
 
+void smsgcm_add_buddy(gpointer data, char *name, char *group){
+  smsgcm_lib_add_buddy(data, NULL, name);
+}
+
+void smsgcm_set_name(gpointer data, char *handle, char *nick){
+  smsgcm_lib_add_buddy(data, nick, handle);
+}
+
 gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
 {
   struct im_connection *ic = data;
