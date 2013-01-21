@@ -7,8 +7,7 @@ void smsgcm_lib_add_buddy(struct im_connection *ic, char *name, char *phone)
   struct smsgcm_data *sd = ic->proto_data;
 
   // Check if the buddy is already in the buddy list.
-  if(getenv("BITLBEE_DEBUG"))
-    imcb_log(ic, "add buddy for %s", name);
+  smsgcm_log(TAG, "smsgcm_lib_add_buddy", "add buddy for %s", name);
 
   imcb_add_buddy(ic, phone, NULL);
 
@@ -27,18 +26,13 @@ void smsgcm_lib_buddy_msg(struct im_connection *ic, char *phone, char *msg)
 
 void smsgcm_load_messages(struct im_connection *ic, char *recv)
 {
-  // look at receiveMessage and download
-  //char *recv = smsgcm_download_recent_messages(ic);
-
-  if( getenv("BITLBEE_DEBUG") ){
-    fprintf(stderr, "%s: smsgcm_load_messages: parsing json from `%s`\n", TAG, recv);
-  }
+  if( strstr(recv, "[]") == NULL )
+    smsgcm_log(TAG, "smsgcm_load_messages", "parsing json from `%s`", recv);
 
   json_t *root;
   json_error_t error;
 
   root = json_loads(recv, 0, &error);
-  //g_free(recv);
 
   if(!json_is_array(root)){
     imcb_error(ic, "malformed json sent from server: was expecting array. (%d) %s", error.line, error.text);
@@ -77,10 +71,10 @@ void smsgcm_load_messages(struct im_connection *ic, char *recv)
     msg->address = json_string_value(address);
     msg->message = json_string_value(message);
 
-    if(getenv("BITLBEE_DEBUG"))
-      imcb_log(ic, "read message: %s (%s): %s", msg->name
-                                              , msg->address
-                                              , msg->message);
+    smsgcm_log(TAG, "smsgcm_load_messages", "read message: %s (%s): %s"
+        , msg->name
+        , msg->address
+        , msg->message);
 
     smsgcm_lib_add_buddy(ic, msg->name, msg->address);
     smsgcm_lib_buddy_msg(ic, msg->address, msg->message);

@@ -4,6 +4,7 @@
 #include "smsgcm.h"
 #include <jansson.h>
 #include <stdarg.h>
+#include <string.h>
 
 struct message_data {
   char *name;

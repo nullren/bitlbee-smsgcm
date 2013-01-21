@@ -3,6 +3,7 @@
 GSList *smsgcm_connections = NULL;
 
 static void smsgcm_poll_messages(struct im_connection *ic);
+static char *TAG = "SMSGCM";
 
 /* main loop */
 gboolean smsgcm_main_loop(gpointer data, gint fd, b_input_condition cond)
@@ -56,21 +57,17 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
   char *body = end_headers + skip;
 
   if(st > 0){
-    if( getenv("BITLBEE_DEBUG") ){
-      imcb_add_buddy(ic, "www", NULL);
-      imcb_buddy_msg(ic, "www", body, 0, 0);
-    }
+    if( strstr(body, "[]") == NULL )
+      smsgcm_log(TAG, "smsgcm_ssl_read_cb", "read contents: %s", body);
     if( sd->queued != NULL ){
       g_free(sd->queued);
       sd->queued = NULL;
-      if( getenv("BITLBEE_DEBUG") )
-        imcb_log(ic, "there was a message queued, so we cleared it: %s", (char *)sd->queued);
+      smsgcm_log(TAG, "smsgcm_ssl_read_cb", "there was a message queued, so we cleared it: %s", (char *)sd->queued);
     } else {
       smsgcm_load_messages(ic, body);
     }
   }else{
-    if( getenv("BITLBEE_DEBUG") )
-      imcb_log(ic, "did not read anything");
+    smsgcm_log(TAG, "smsgcm_ssl_read_cb", "did not read anything");
   }
 
 
@@ -110,8 +107,7 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
     g_free(qs); qs = NULL;
     g_free(addr); addr = NULL;
     g_free(mesg); mesg = NULL;
-    if(getenv("BITLBEE_DEBUG"))
-      imcb_log(ic, "sending '%s' to server", getstr);
+    smsgcm_log(TAG, "smsgcm_ssl_connected", "sending '%s' to server", getstr);
   }else{
     g_sprintf(getstr, template, "receive", "dump");
   }
@@ -128,7 +124,7 @@ static void smsgcm_poll_messages(struct im_connection *ic){
 
   if( ssl == NULL ){
     imcb_error(ic, "ssl empty??");
-    imc_logout(ic, FALSE);
+    imc_logout(ic, TRUE);
   }
   sd->ssl = ssl;
   sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
@@ -157,8 +153,7 @@ static void smsgcm_main_loop_start(struct im_connection *ic)
 /* message sent to buddy - use imcb_buddy_msg(ic, handle, msg, 0, 0) to display message */
 static int smsgcm_buddy_msg(struct im_connection *ic, char *who, char *message, int flags)
 {
-  if(getenv("BITLBEE_DEBUG"))
-    imcb_log(ic, "tried to send a buddy message to %s", who);
+  smsgcm_log(TAG, "smsgcm_buddy_msg", "tried to send a buddy message to %s", who);
   smsgcm_post_message(ic, who, message);
   return 0;
 }
