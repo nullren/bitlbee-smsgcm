@@ -24,7 +24,7 @@ static gnutls_datum_t *load_file(char *fn){
     if( len == 0 )
       return NULL;
 
-    contents[len+1] = '\0';
+    contents[len] = '\0';
   }
   fclose(fp);
 
@@ -59,6 +59,9 @@ void load_credentials_from_pkcs12(gpointer data){
 
   if( gnutls_pkcs12_import(p12, p12_data, GNUTLS_X509_FMT_DER, 0) != 0 )
     exit(3);
+
+  g_free(p12_data->data);
+  g_free(p12_data);
 
   gnutls_x509_privkey_t pri;
   gnutls_x509_crt_t *chain;
