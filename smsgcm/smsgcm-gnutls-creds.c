@@ -5,6 +5,10 @@
 static int _verify_certificate_callback (gnutls_session_t session);
 static char *TAG = "SMSGCM-GNUTLS-CREDS";
 
+/**
+ * must clean up datum after using it
+ * g_free(obj->data); g_free(obj);
+ */
 static gnutls_datum_t *load_file(char *fn){
   unsigned char *contents = NULL;
   FILE *fp = fopen(fn, "r");
@@ -37,6 +41,8 @@ static gnutls_datum_t *load_file(char *fn){
   return dp12;
 }
 
+/**
+ */
 void load_credentials_from_pkcs12(gpointer data){
   struct scd *conn = data;
   if( conn == NULL )
@@ -60,40 +66,51 @@ void load_credentials_from_pkcs12(gpointer data){
   if( gnutls_pkcs12_import(p12, p12_data, GNUTLS_X509_FMT_DER, 0) != 0 )
     exit(3);
 
+  // free up data stuff
   gnutls_free(p12_data->data);
   gnutls_free(p12_data);
 
+  // extract info from p12
   gnutls_x509_privkey_t pri;
   gnutls_x509_crt_t *chain;
   unsigned int chain_len;
   gnutls_x509_crt_t *extra_certs;
   unsigned int extra_certs_len;
-  gnutls_x509_crt_t crl;
+  //gnutls_x509_crt_t crl;
 
-  if( gnutls_pkcs12_simple_parse(p12 , creds->p12_passwd
-          , &pri , &chain , &chain_len , &extra_certs
-          , &extra_certs_len , &crl , (unsigned int)0) != 0 )
+  if( gnutls_pkcs12_simple_parse
+          ( p12                    // gnutls_pkcs12_t
+          , creds->p12_passwd      // char *
+          , &pri                   // gnutls_x509_privkey_t *
+          , &chain                 // gnutls_x509_crt_t **
+          , &chain_len             // unsigned int *
+          , &extra_certs           // gnutls_x509_crt_t **
+          , &extra_certs_len       // unsigned int *
+          , NULL //&crl                   // gnutls_x509_crt_t *
+          , (unsigned int)0) != 0 )
     exit(4);
 
-  gnutls_free(p12);
+  // can free p12 somehow
+  gnutls_pkcs12_deinit(p12);
 
   smsgcm_log(TAG, "load_credentials_from_pkcs12", "read contents of %s", creds->p12_file);
 
-  gnutls_certificate_set_x509_trust (xcred, &extra_certs[0], GNUTLS_X509_FMT_PEM);
-  gnutls_free(extra_certs);
-
   gnutls_certificate_set_verify_function (xcred, _verify_certificate_callback);
 
+  gnutls_certificate_set_x509_trust (xcred, &extra_certs[0], GNUTLS_X509_FMT_PEM);
   gnutls_certificate_set_x509_key (xcred, 
       chain, chain_len, pri);
 
+  // clean up the stuff we made
   gnutls_free(pri);
   gnutls_free(chain);
-  gnutls_free(crl);
+  gnutls_free(extra_certs);
+  //gnutls_free(crl);
 }
 
 
-/* This function will verify the peer's certificate, and check
+/**
+ * This function will verify the peer's certificate, and check
  * if the hostname matches, as well as the activation, expiration dates.
  */
 static int
