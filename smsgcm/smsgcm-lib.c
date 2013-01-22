@@ -78,6 +78,13 @@ void smsgcm_load_messages(struct im_connection *ic, char *recv)
 
     smsgcm_lib_add_buddy(ic, msg->name, msg->address);
     smsgcm_lib_buddy_msg(ic, msg->address, msg->message);
+
+    //clean up
+    g_free(msg);
+    json_decref(message);
+    json_decref(address);
+    json_decref(name);
+    json_decref(data);
   }
 
   json_decref(root);
