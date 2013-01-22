@@ -67,11 +67,18 @@ char *make_query_string(struct post_item *items, int n_items)
     char *ek = url_encode(p->key);
     char *ev = url_encode(p->value);
 
-    buffer = realloc(buffer, strlen(buffer) + strlen(ek) + strlen (ev) + (i?2:1));
+    buffer = realloc(buffer
+                 , strlen(buffer)  // existing buffer
+                 + (i>0)           // &
+                 + strlen(ek)      // key
+                 + 1               // =
+                 + strlen (ev)     // value
+                 + 1);             // \0
+
     sprintf(buffer, "%s%s%s=%s", buffer, (i?"&":""), ek, ev);
 
-    free(ek);
-    free(ev);
+    free(ek); ek = NULL;
+    free(ev); ev = NULL;
   }
 
   return buffer;
