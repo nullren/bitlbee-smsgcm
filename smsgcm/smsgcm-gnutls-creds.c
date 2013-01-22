@@ -102,7 +102,7 @@ void load_credentials_from_pkcs12(gpointer data){
       chain, chain_len, pri);
 
   // clean up the stuff we made
-  gnutls_free(pri);
+  gnutls_x509_privkey_deinit(pri);
   gnutls_free(chain);
   gnutls_free(extra_certs);
   //gnutls_free(crl);
