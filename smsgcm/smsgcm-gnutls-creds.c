@@ -60,8 +60,8 @@ void load_credentials_from_pkcs12(gpointer data){
   if( gnutls_pkcs12_import(p12, p12_data, GNUTLS_X509_FMT_DER, 0) != 0 )
     exit(3);
 
-  g_free(p12_data->data);
-  g_free(p12_data);
+  gnutls_free(p12_data->data);
+  gnutls_free(p12_data);
 
   gnutls_x509_privkey_t pri;
   gnutls_x509_crt_t *chain;
@@ -75,19 +75,21 @@ void load_credentials_from_pkcs12(gpointer data){
           , &extra_certs_len , &crl , (unsigned int)0) != 0 )
     exit(4);
 
+  gnutls_free(p12);
+
   smsgcm_log(TAG, "load_credentials_from_pkcs12", "read contents of %s", creds->p12_file);
 
   gnutls_certificate_set_x509_trust (xcred, &extra_certs[0], GNUTLS_X509_FMT_PEM);
+  gnutls_free(extra_certs);
+
   gnutls_certificate_set_verify_function (xcred, _verify_certificate_callback);
 
   gnutls_certificate_set_x509_key (xcred, 
       chain, chain_len, pri);
 
-  g_free(p12);
-  g_free(pri);
-  g_free(chain);
-  g_free(extra_certs);
-  g_free(crl);
+  gnutls_free(pri);
+  gnutls_free(chain);
+  gnutls_free(crl);
 }
 
 
