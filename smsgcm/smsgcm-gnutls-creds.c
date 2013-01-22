@@ -82,6 +82,12 @@ void load_credentials_from_pkcs12(gpointer data){
 
   gnutls_certificate_set_x509_key (xcred, 
       chain, chain_len, pri);
+
+  g_free(p12);
+  g_free(pri);
+  g_free(chain);
+  g_free(extra_certs);
+  g_free(crl);
 }
 
 
