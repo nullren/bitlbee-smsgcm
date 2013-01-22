@@ -96,8 +96,8 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
   char *template = "GET /%sMessage?%s HTTP/1.0\r\n\r\n";
 
   if(sd->queued != NULL){
-    char *addr = g_strdup(sd->queued->address);
-    char *mesg = g_strdup(sd->queued->message);
+    char *addr = sd->queued->address;
+    char *mesg = sd->queued->message;
     struct post_item p[] =
         { {"address", addr} , {"message", mesg} };
 
