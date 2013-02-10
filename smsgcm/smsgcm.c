@@ -31,15 +31,16 @@ void smsgcm_set_name(gpointer data, char *handle, char *nick){
 
 gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
 {
-  struct im_connection *ic = data;
+  struct scd *ssl = data;
+  struct im_connection *ic = ssl->data;
   struct smsgcm_data *sd = ic->proto_data;
 
   char buf[10240];
 
-  if(sd == NULL || sd->fd == -1)
+  if(sd == NULL || ssl_getfd(ssl) == -1)
     return FALSE;
 
-  int st = ssl_read(sd->ssl, buf, sizeof(buf));
+  int st = ssl_read(ssl, buf, sizeof(buf));
 
   buf[st] = '\0';
 
@@ -70,6 +71,7 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
     smsgcm_log(TAG, "smsgcm_ssl_read_cb", "did not read anything");
   }
 
+  /* TODO: now clean up */
 
   return st;
 }
@@ -90,7 +92,7 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
     return FALSE;
   }
 
-  sd->bfd = b_input_add(sd->fd, B_EV_IO_READ, smsgcm_ssl_read_cb, ic);
+  sd->bfd = b_input_add(ssl_getfd(ssl), B_EV_IO_READ, smsgcm_ssl_read_cb, ssl);
 
   char getstr[10240];
   char *template = "GET /%sMessage?%s HTTP/1.0\r\n\r\n";
@@ -116,7 +118,7 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
     g_sprintf(getstr, template, "receive", "dump");
   }
 
-  int s = ssl_write(sd->ssl, getstr, strlen(getstr));
+  int s = ssl_write(ssl, getstr, strlen(getstr));
 
   return s;
 }
