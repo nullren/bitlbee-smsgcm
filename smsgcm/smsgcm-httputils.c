@@ -75,6 +75,9 @@ char *make_query_string(struct post_item *items, int n_items)
                  + strlen (ev)     // value
                  + 1);             // \0
 
+    if(buffer == NULL)
+      return NULL;
+
     sprintf(buffer, "%s%s%s=%s", buffer, (i?"&":""), ek, ev);
 
     free(ek); ek = NULL;

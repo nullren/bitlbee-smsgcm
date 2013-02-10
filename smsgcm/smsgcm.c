@@ -102,6 +102,10 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
         { {"address", addr} , {"message", mesg} };
 
     char *qs = make_query_string(p, 2);
+    if(qs == NULL){
+      imcb_error(ic, "memory error making query string!");
+      return FALSE;
+    }
     g_sprintf(getstr, template, "send", qs);
 
     g_free(qs); qs = NULL;
