@@ -51,8 +51,8 @@ void load_credentials_from_pkcs12(gpointer data){
   gnutls_certificate_credentials_t xcred = conn->xcred;
   smsgcm_log(TAG, "load_credentials_from_pkcs12", "address of xcreds: %p", xcred);
 
-  struct im_connection *ic = conn->data;
-  struct smsgcm_data *sd = ic->proto_data;
+  struct smsgcm_data *sd = conn->data;
+  struct im_connection *ic = sd->ic;
   struct credentials *creds = sd->creds;
 
   gnutls_pkcs12_t p12;

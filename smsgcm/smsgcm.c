@@ -32,8 +32,8 @@ void smsgcm_set_name(gpointer data, char *handle, char *nick){
 gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
 {
   struct scd *ssl = data;
-  struct im_connection *ic = ssl->data;
-  struct smsgcm_data *sd = ic->proto_data;
+  struct smsgcm_data *sd = ssl->data;
+  struct im_connection *ic = sd->ic;
 
   char buf[10240];
 
@@ -72,15 +72,18 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
   }
 
   /* TODO: now clean up */
+  g_free(sd);
   g_free(ssl);
+  sd = ssl = NULL;
 
   return st;
 }
 
 gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_input_condition cond)
 {
-  struct im_connection *ic = data;
-  struct smsgcm_data *sd = ic->proto_data;
+
+  struct smsgcm_data *sd = data;
+  struct im_connection *ic = sd->ic;
   struct scd *ssl = source;
 
   if(ssl == NULL){
@@ -125,9 +128,16 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
 }
 
 static void smsgcm_poll_messages(struct im_connection *ic){
-  struct smsgcm_data *sd = ic->proto_data;
+  struct smsgcm_data *sd = g_new0(struct smsgcm_data, 1);
+
+  sd->ic = ic;
+
+  struct smsgcm_data *sdata = ic->proto_data;
+  sd->creds = sdata->creds;
+
+  // calling this will put ssl_data in ssl->data
   struct scd *ssl = ssl_connect_with_creds("smsgcm.omgren.com", 443, TRUE
-                        , smsgcm_ssl_connected, (ssl_credentials_func)load_credentials_from_pkcs12, ic);
+                        , smsgcm_ssl_connected, (ssl_credentials_func)load_credentials_from_pkcs12, sd);
 
   if( ssl == NULL ){
     imcb_error(ic, "ssl empty??");
@@ -136,14 +146,25 @@ static void smsgcm_poll_messages(struct im_connection *ic){
 }
 
 static void smsgcm_post_message(struct im_connection *ic, char *address, char *message){
-  struct smsgcm_data *sd = ic->proto_data;
+  struct smsgcm_data *sd = g_new0(struct smsgcm_data, 1);
 
+  sd->ic = ic;
   sd->queued = g_new0(struct queue_message, 1);
 
   sd->queued->address = g_strdup(address);
   sd->queued->message = g_strdup(message);
 
-  smsgcm_poll_messages(ic);
+  struct smsgcm_data *sdata = ic->proto_data;
+  sd->creds = sdata->creds;
+
+  // calling this will put ssl_data in ssl->data
+  struct scd *ssl = ssl_connect_with_creds("smsgcm.omgren.com", 443, TRUE
+                        , smsgcm_ssl_connected, (ssl_credentials_func)load_credentials_from_pkcs12, sd);
+
+  if( ssl == NULL ){
+    imcb_error(ic, "ssl empty??");
+    imc_logout(ic, TRUE);
+  }
 }
 
 static void smsgcm_main_loop_start(struct im_connection *ic)
