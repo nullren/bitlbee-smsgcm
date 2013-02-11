@@ -20,9 +20,7 @@ struct smsgcm_data {
   struct im_connection *ic;
   gint main_loop_id;
   struct credentials *creds;
-  void *ssl;
   int bfd;
-  int fd;
   struct queue_message *queued;
 };
 
