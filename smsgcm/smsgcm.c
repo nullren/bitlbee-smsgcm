@@ -72,6 +72,7 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
   }
 
   /* TODO: now clean up */
+  g_free(ssl);
 
   return st;
 }
@@ -132,8 +133,6 @@ static void smsgcm_poll_messages(struct im_connection *ic){
     imcb_error(ic, "ssl empty??");
     imc_logout(ic, TRUE);
   }
-  sd->ssl = ssl;
-  sd->fd = sd->ssl ? ssl_getfd(sd->ssl) : -1;
 }
 
 static void smsgcm_post_message(struct im_connection *ic, char *address, char *message){
