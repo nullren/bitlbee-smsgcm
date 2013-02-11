@@ -64,9 +64,9 @@ gboolean smsgcm_ssl_read_cb(gpointer data, gint fd, b_input_condition cond)
       g_free(sd->queued);
       sd->queued = NULL;
       smsgcm_log(TAG, "smsgcm_ssl_read_cb", "there was a message queued, so we cleared it: %s", (char *)sd->queued);
-    } else {
-      smsgcm_load_messages(ic, body);
     }
+
+    smsgcm_load_messages(ic, body);
   }else{
     smsgcm_log(TAG, "smsgcm_ssl_read_cb", "did not read anything");
   }
@@ -95,15 +95,15 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
   sd->bfd = b_input_add(ssl_getfd(ssl), B_EV_IO_READ, smsgcm_ssl_read_cb, ssl);
 
   char getstr[10240];
-  char *template = "GET /%sMessage?%s HTTP/1.0\r\n\r\n";
+  char *template = "GET /%s?%s HTTP/1.0\r\n\r\n";
 
   if(sd->queued != NULL){
     char *addr = sd->queued->address;
     char *mesg = sd->queued->message;
     struct post_item p[] =
-        { {"address", addr} , {"message", mesg} };
+        { {"address", addr} , {"message", mesg} , {"dump", "1"} };
 
-    char *qs = make_query_string(p, 2);
+    char *qs = make_query_string(p, 3);
     if(qs == NULL){
       imcb_error(ic, "memory error making query string!");
       return FALSE;
@@ -115,7 +115,7 @@ gboolean smsgcm_ssl_connected(gpointer data, int returncode, void *source, b_inp
     g_free(mesg); mesg = NULL;
     smsgcm_log(TAG, "smsgcm_ssl_connected", "sending '%s' to server", getstr);
   }else{
-    g_sprintf(getstr, template, "receive", "dump");
+    g_sprintf(getstr, template, "received", "dump=1");
   }
 
   int s = ssl_write(ssl, getstr, strlen(getstr));
